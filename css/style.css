@@ -128,3 +128,36 @@ input[type="number"] {
 .animate-soft-pulse {
   animation: softPulse 2s infinite ease-in-out;
 }
+
+/* Thermal receipt styling */
+.receipt-paper {
+  background: #ffffff;
+  color: #1e293b;
+  position: relative;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+.receipt-paper::before,
+.receipt-paper::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background-size: 16px 10px;
+  background-repeat: repeat-x;
+}
+.receipt-paper::before {
+  top: -10px;
+  background-image: radial-gradient(circle at 8px 0, transparent 8px, #ffffff 8.5px);
+}
+.receipt-paper::after {
+  bottom: -10px;
+  background-image: radial-gradient(circle at 8px 10px, transparent 8px, #ffffff 8.5px);
+}
+
+/* Receipt print specific */
+@media print {
+  .receipt-paper {
+    box-shadow: none !important;
+  }
+}
