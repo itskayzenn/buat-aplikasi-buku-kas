@@ -347,6 +347,43 @@ const Store = {
     return newWallet;
   },
 
+  transferFunds(fromWalletId, toWalletId, amount, note = '', date = null) {
+    const fromW = this.currentData.wallets.find(w => w.id === fromWalletId);
+    const toW = this.currentData.wallets.find(w => w.id === toWalletId);
+    if (!fromW || !toW || fromWalletId === toWalletId) return null;
+
+    const amt = Number(amount) || 0;
+    if (amt <= 0) return null;
+
+    const txDate = date || Utils.getTodayString();
+    const time = Utils.getCurrentTimeString();
+    const customNote = note ? ` (${note.trim()})` : '';
+
+    // 1. Catat kas keluar dari dompet asal
+    const outTx = this.addTransaction({
+      type: 'out',
+      amount: amt,
+      category: 'Transfer Kas / Rekening',
+      walletId: fromWalletId,
+      date: txDate,
+      time: time,
+      note: `Pindah dana ke ${toW.name}${customNote}`
+    });
+
+    // 2. Catat kas masuk ke dompet tujuan
+    const inTx = this.addTransaction({
+      type: 'in',
+      amount: amt,
+      category: 'Transfer Kas / Rekening',
+      walletId: toWalletId,
+      date: txDate,
+      time: time,
+      note: `Terima pindah dana dari ${fromW.name}${customNote}`
+    });
+
+    return { outTx, inTx };
+  },
+
   deleteWallet(walletId) {
     if (this.currentData.wallets.length <= 1) {
       return { success: false, message: 'Harus ada minimal satu dompet/rekening kas.' };

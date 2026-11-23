@@ -133,10 +133,11 @@ const Utils = {
     const dueDateFormatted = debt.dueDate ? Utils.formatDateIndo(debt.dueDate, true) : 'secepatnya';
 
     let message = '';
+    const noteText = debt.note || debt.description || 'Transaksi Usaha';
     if (debt.type === 'piutang') {
       // Pelanggan berhutang ke kita
       message = `Halo Kak *${debt.personName}*,\n\nSalam dari *${toko}* 🙏\nMengingatkan kembali catatan tagihan belanja dengan rincian:\n\n` +
-        `• *Keterangan*: ${debt.description || 'Transaksi Belanja'}\n` +
+        `• *Keterangan*: ${noteText}\n` +
         `• *Total Tagihan*: ${Utils.formatRupiah(debt.amount)}\n` +
         `• *Sudah Dibayar*: ${Utils.formatRupiah(debt.paidAmount || 0)}\n` +
         `• *Sisa yang Harus Dibayar*: *${Utils.formatRupiah(sisa)}*\n` +
@@ -145,13 +146,46 @@ const Utils = {
     } else {
       // Kita berhutang ke supplier/orang
       message = `Halo Kak *${debt.personName}*,\n\nIni catatan konfirmasi hutang/kewajiban dari *${toko}*:\n\n` +
-        `• *Keterangan*: ${debt.description || '-'}\n` +
+        `• *Keterangan*: ${noteText}\n` +
         `• *Sisa Tagihan*: *${Utils.formatRupiah(sisa)}*\n` +
         `• *Jatuh Tempo*: ${dueDateFormatted}\n\n` +
         `Kami jadwalkan pelunasan sebelum jatuh tempo. Terima kasih! 🙏`;
     }
 
     return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+  },
+
+  // WhatsApp Digital Receipt Generator
+  buildReceiptWhatsAppUrl(tx, businessProfile, walletName = 'Kas Tunai', customerPhone = '') {
+    const toko = businessProfile.name || 'Buku Kas';
+    const alamat = businessProfile.address ? `${businessProfile.address}\n` : '';
+    const telp = businessProfile.phone ? `Telp/WA: ${businessProfile.phone}\n` : '';
+    const tgl = Utils.formatDateIndo(tx.date, true);
+    const tipeLabel = tx.type === 'in' ? 'BUKTI PEMBAYARAN / PENERIMAAN' : 'BUKTI PENGELUARAN KAS';
+
+    let message = `🧾 *${tipeLabel}*\n` +
+      `*${toko.toUpperCase()}*\n` +
+      alamat + telp +
+      `------------------------------------\n` +
+      `No. Ref: #${tx.id.toUpperCase().substring(0, 10)}\n` +
+      `Waktu: ${tgl}, ${tx.time || ''}\n` +
+      `Metode: ${walletName}\n` +
+      `Kategori: ${tx.category}\n` +
+      `Keterangan: ${tx.note || '-'}\n` +
+      `------------------------------------\n` +
+      `*TOTAL: ${Utils.formatRupiah(tx.amount)}*\n` +
+      `Status: *BERHASIL / LUNAS*\n` +
+      `------------------------------------\n` +
+      `${businessProfile.notes || 'Terima kasih atas kepercayaan Anda!'}\n` +
+      `_Dicatat via Buku Kas Pintar_`;
+
+    let cleanPhone = (customerPhone || '').replace(/[^0-9]/g, '');
+    if (cleanPhone) {
+      if (cleanPhone.startsWith('0')) cleanPhone = '62' + cleanPhone.substring(1);
+      else if (!cleanPhone.startsWith('62')) cleanPhone = '62' + cleanPhone;
+      return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    }
+    return `https://wa.me/?text=${encodeURIComponent(message)}`;
   },
 
   // Toast notification
