@@ -449,7 +449,15 @@ const App = {
 
   renderDashboardCharts() {
     const txs = this.getFilteredTransactions();
-    ChartsManager.refresh(txs);
+    let days = 7;
+    if (this.currentPeriod === 'today') days = 1;
+    else if (this.currentPeriod === 'yesterday') days = 2;
+    else if (this.currentPeriod === '7days') days = 7;
+    else if (this.currentPeriod === 'this_month') days = 14;
+    else days = 0; // All dates in range
+
+    ChartsManager.renderCashflowChart(txs, days);
+    ChartsManager.renderCategoryChart(txs, 'out');
   },
 
   // --- Transactions Tab Rendering ---
@@ -1256,6 +1264,20 @@ const App = {
     Store.resetActiveBookData();
     this.switchTab('dashboard');
     Utils.showToast('Data buku kas telah dikosongkan.', 'info');
+  },
+
+  deleteActiveBook() {
+    if (Store.books.length <= 1) {
+      Utils.showToast('Tidak dapat menghapus satu-satunya buku kas.', 'error');
+      return;
+    }
+    const bookName = Store.getActiveBook().name;
+    if (confirm(`Apakah Anda yakin ingin menghapus buku kas "${bookName}" beserta seluruh transaksinya secara permanen?`)) {
+      Store.deleteBook(Store.activeBookId);
+      this.renderBookSelector();
+      this.switchTab('dashboard');
+      Utils.showToast(`Buku kas "${bookName}" berhasil dihapus.`, 'info');
+    }
   },
 
   // --- Modals Controller ---
