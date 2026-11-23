@@ -1,5 +1,1274 @@
 <!DOCTYPE html>
-<html>
-<head><title>Test</title></head>
-<body><h1>Hello Buku Kas</h1></body>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Buku Kas Pintar - Catatan Keuangan UMKM & Bisnis</title>
+  <meta name="description" content="Aplikasi pencatatan kas masuk, kas keluar, hutang, piutang, dan laporan laba rugi praktis untuk UMKM dan Bisnis Indonesia.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2310b981'><path d='M4 3h16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm0 2v14h16V5H4zm3 3h10v2H7V8zm0 4h7v2H7v-2z'/></svg>">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            emerald: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b',
+              950: '#022c22'
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Lucide Icons & Chart.js & Confetti CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 min-h-screen antialiased flex flex-col selection:bg-emerald-500 selection:text-white">
+
+  <!-- ==================== HEADER ==================== -->
+  <header class="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 transition-colors">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Left: Logo & Books Switcher -->
+        <div class="flex items-center space-x-3 sm:space-x-5">
+          <div class="flex items-center space-x-2.5 cursor-pointer" onclick="App.switchTab('dashboard')">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
+              <i data-lucide="book-open" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <span class="text-base sm:text-lg font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
+                BukuKas<span class="text-emerald-500 font-extrabold text-xs px-1.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/70 rounded border border-emerald-200 dark:border-emerald-800">PRO</span>
+              </span>
+              <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium hidden sm:block">Pembukuan Kas Pintar</p>
+            </div>
+          </div>
+
+          <!-- Divider -->
+          <div class="h-6 w-px bg-slate-200 dark:bg-slate-800"></div>
+
+          <!-- Active Book Kas Dropdown -->
+          <div class="relative">
+            <button id="books-dropdown-btn" onclick="App.toggleBookDropdown()" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80 hover:bg-slate-100 dark:hover:bg-slate-800 transition text-xs font-semibold text-slate-700 dark:text-slate-200">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span id="current-book-name" class="max-w-[130px] sm:max-w-[180px] truncate">Toko Berkah Usaha</span>
+              <span id="current-book-type" class="text-[9px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 px-1 py-0.5 rounded font-mono hidden md:inline">UMKM</span>
+              <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
+            </button>
+
+            <!-- Dropdown Menu -->
+            <div id="books-dropdown" class="hidden absolute left-0 mt-2 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-2 z-50">
+              <div class="px-2.5 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Pilih Buku Kas</div>
+              <div id="books-dropdown-list" class="space-y-1 my-1 max-h-56 overflow-y-auto">
+                <!-- Dynamically loaded -->
+              </div>
+              <div class="border-t border-slate-100 dark:border-slate-700/80 pt-1.5 mt-1">
+                <button onclick="App.openNewBookModal()" class="w-full text-left px-3 py-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg flex items-center space-x-2 transition">
+                  <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                  <span>+ Tambah Buku Kas Baru</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Center: Desktop Nav Tabs -->
+        <nav class="hidden lg:flex items-center space-x-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 text-xs font-semibold">
+          <button data-tab-target="dashboard" onclick="App.switchTab('dashboard')" class="px-3.5 py-2 rounded-xl transition flex items-center space-x-1.5">
+            <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+            <span>Ikhtisar</span>
+          </button>
+          <button data-tab-target="transactions" onclick="App.switchTab('transactions')" class="px-3.5 py-2 rounded-xl transition flex items-center space-x-1.5">
+            <i data-lucide="list-ordered" class="w-4 h-4"></i>
+            <span>Transaksi</span>
+          </button>
+          <button data-tab-target="debts" onclick="App.switchTab('debts')" class="px-3.5 py-2 rounded-xl transition flex items-center space-x-1.5">
+            <i data-lucide="clock" class="w-4 h-4"></i>
+            <span>Hutang & Piutang</span>
+          </button>
+          <button data-tab-target="reports" onclick="App.switchTab('reports')" class="px-3.5 py-2 rounded-xl transition flex items-center space-x-1.5">
+            <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+            <span>Laporan</span>
+          </button>
+          <button data-tab-target="wallets" onclick="App.switchTab('wallets')" class="px-3.5 py-2 rounded-xl transition flex items-center space-x-1.5">
+            <i data-lucide="wallet" class="w-4 h-4"></i>
+            <span>Dompet/Kas</span>
+          </button>
+          <button data-tab-target="settings" onclick="App.switchTab('settings')" class="px-3.5 py-2 rounded-xl transition flex items-center space-x-1.5">
+            <i data-lucide="settings" class="w-4 h-4"></i>
+            <span>Pengaturan</span>
+          </button>
+        </nav>
+
+        <!-- Right: Actions & Theme -->
+        <div class="flex items-center space-x-2 sm:space-x-3">
+          <!-- Quick Sample Data Button -->
+          <button onclick="App.loadSampleData()" title="Muat Data Contoh Toko UMKM" class="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition border border-slate-200 dark:border-slate-700">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i>
+            <span>Data Contoh</span>
+          </button>
+
+          <!-- Toggle Theme -->
+          <button onclick="App.toggleTheme()" title="Ubah Tema Gelap / Terang" class="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition border border-slate-200 dark:border-slate-700">
+            <i data-lucide="sun-moon" class="w-4 h-4"></i>
+          </button>
+
+          <!-- Quick Catat Transaksi Button -->
+          <button onclick="App.openTransactionModal('in')" class="hidden sm:flex items-center space-x-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-sm shadow-emerald-500/20 active:scale-95">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>Catat Kas</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN CONTENT WRAPPER ==================== -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 lg:pb-12">
+
+    <!-- TAB 1: IKHTISAR / DASHBOARD -->
+    <div id="view-dashboard" class="tab-view space-y-6">
+      
+      <!-- Top Hero Banner: Total Kas & Quick Period -->
+      <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+        <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute right-1/4 -top-10 w-48 h-48 bg-teal-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <div class="flex items-center space-x-2 text-slate-300 text-xs sm:text-sm font-medium mb-1.5">
+              <span>Total Saldo Kas Bersih</span>
+              <button onclick="App.toggleHideBalance()" title="Sembunyikan / Tampilkan Saldo" class="text-slate-400 hover:text-white p-0.5 rounded transition">
+                <i id="btn-toggle-eye" data-lucide="eye" class="w-4 h-4"></i>
+              </button>
+            </div>
+            <div class="flex items-baseline space-x-3">
+              <h1 id="dash-total-balance" class="text-3xl sm:text-5xl font-black tracking-tight text-white privacy-balance">Rp 0</h1>
+              <span class="text-emerald-400 text-xs font-semibold bg-emerald-950/80 px-2.5 py-1 rounded-full border border-emerald-700/50">Kas Riil Toko</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-2 flex items-center space-x-1.5">
+              <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <span>Seluruh pencatatan kas tersimpan aman secara offline di browser Anda.</span>
+            </p>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="flex flex-wrap items-center gap-2.5">
+            <button onclick="App.openTransactionModal('in')" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center space-x-2 shadow-lg shadow-emerald-900/40">
+              <i data-lucide="arrow-down-left" class="w-4 h-4"></i>
+              <span>+ Uang Masuk</span>
+            </button>
+            <button onclick="App.openTransactionModal('out')" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition flex items-center space-x-2 shadow-lg shadow-rose-900/40">
+              <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+              <span>- Uang Keluar</span>
+            </button>
+            <button onclick="App.openDebtModal('piutang')" class="px-3.5 py-2.5 bg-slate-800/90 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition border border-slate-700 flex items-center space-x-1.5">
+              <i data-lucide="clock" class="w-4 h-4 text-amber-400"></i>
+              <span>+ Catat Hutang</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Period Filter Pills Inside Banner -->
+        <div class="mt-6 pt-5 border-t border-slate-700/70 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span class="text-slate-400 font-medium mr-1 text-[11px]">Periode:</span>
+            <button onclick="App.setPeriodFilter('today')" data-period="today" class="period-pill px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold transition">Hari Ini</button>
+            <button onclick="App.setPeriodFilter('yesterday')" data-period="yesterday" class="period-pill px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold transition">Kemarin</button>
+            <button onclick="App.setPeriodFilter('7days')" data-period="7days" class="period-pill px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold transition">7 Hari</button>
+            <button onclick="App.setPeriodFilter('this_month')" data-period="this_month" class="period-pill px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-semibold shadow-sm transition">Bulan Ini</button>
+            <button onclick="App.setPeriodFilter('last_month')" data-period="last_month" class="period-pill px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold transition">Bulan Lalu</button>
+            <button onclick="App.setPeriodFilter('all')" data-period="all" class="period-pill px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold transition">Semua</button>
+            <button onclick="App.setPeriodFilter('custom')" data-period="custom" class="period-pill px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold transition">Kustom</button>
+          </div>
+          <span id="dash-tx-count" class="text-slate-400 font-medium text-[11px]">0 Transaksi</span>
+        </div>
+
+        <!-- Custom Date Range Controls (Hidden by default) -->
+        <div id="dashboard-custom-dates" class="hidden mt-3 pt-3 border-t border-slate-700/50 flex flex-wrap items-center gap-2">
+          <input type="date" id="dash-start-date" class="px-2.5 py-1.5 rounded-lg bg-slate-800 text-white border border-slate-700 text-xs">
+          <span class="text-slate-400 text-xs">sampai</span>
+          <input type="date" id="dash-end-date" class="px-2.5 py-1.5 rounded-lg bg-slate-800 text-white border border-slate-700 text-xs">
+          <button onclick="App.applyCustomDashboardDates()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition">Terapkan</button>
+        </div>
+      </div>
+
+      <!-- Financial Metric Cards (In, Out, Net, Receivables, Debts) -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <!-- Pemasukan -->
+        <div class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Pemasukan</span>
+            <div class="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <i data-lucide="arrow-down-left" class="w-4 h-4"></i>
+            </div>
+          </div>
+          <p id="dash-period-income" class="text-base sm:text-xl font-black text-emerald-600 dark:text-emerald-400 mt-2 truncate">Rp 0</p>
+          <span class="text-[11px] text-slate-400 font-medium">Uang kas masuk periode ini</span>
+        </div>
+
+        <!-- Pengeluaran -->
+        <div class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Pengeluaran</span>
+            <div class="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+              <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+            </div>
+          </div>
+          <p id="dash-period-expense" class="text-base sm:text-xl font-black text-rose-600 dark:text-rose-400 mt-2 truncate">Rp 0</p>
+          <span class="text-[11px] text-slate-400 font-medium">Beban & belanja periode ini</span>
+        </div>
+
+        <!-- Selisih Arus Kas (Net) -->
+        <div class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Selisih Kas</span>
+            <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+              <i data-lucide="activity" class="w-4 h-4"></i>
+            </div>
+          </div>
+          <p id="dash-period-net" class="text-base sm:text-xl font-black text-slate-900 dark:text-slate-100 mt-2 truncate">Rp 0</p>
+          <span class="text-[11px] text-slate-400 font-medium">Surplus / defisit kas periode</span>
+        </div>
+
+        <!-- Piutang & Hutang Summary -->
+        <div class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm flex flex-col justify-between cursor-pointer hover:border-emerald-400 transition" onclick="App.switchTab('debts')">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Hutang & Piutang</span>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+          </div>
+          <div class="mt-2 space-y-1">
+            <div class="flex justify-between items-center text-xs">
+              <span class="text-slate-500">Piutang (di orang):</span>
+              <span id="dash-total-piutang" class="font-bold text-emerald-600">Rp 0</span>
+            </div>
+            <div class="flex justify-between items-center text-xs">
+              <span class="text-slate-500">Hutang (kewajiban):</span>
+              <span id="dash-total-hutang" class="font-bold text-amber-600">Rp 0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Wallets / Dompet Bar -->
+      <div>
+        <div class="flex items-center justify-between mb-2.5">
+          <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Rekening Kas & Dompet</h3>
+          <button onclick="App.switchTab('wallets')" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline">Kelola Dompet →</button>
+        </div>
+        <div id="dash-wallets-list" class="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- Charts Section: Arus Kas Trend & Category Distribution -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Cashflow Bar Chart -->
+        <div class="lg:col-span-2 bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100">Tren Arus Kas (Uang Masuk vs Keluar)</h3>
+              <p class="text-xs text-slate-500">Grafik pergerakan kas harian</p>
+            </div>
+            <span class="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-lg font-medium">Harian</span>
+          </div>
+          <div class="h-64 sm:h-72 w-full">
+            <canvas id="cashflow-chart-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Category Donut Chart -->
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100">Alokasi Pengeluaran</h3>
+                <p class="text-xs text-slate-500">Distribusi beban per kategori</p>
+              </div>
+              <i data-lucide="pie-chart" class="w-4 h-4 text-slate-400"></i>
+            </div>
+            <div class="h-56 sm:h-64 w-full relative">
+              <canvas id="category-chart-canvas"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Transactions Section -->
+      <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm p-5">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100">Transaksi Terakhir</h3>
+            <p class="text-xs text-slate-500">Catatan kas yang baru saja ditambahkan</p>
+          </div>
+          <button onclick="App.switchTab('transactions')" class="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline">
+            Lihat Semua Transaksi →
+          </button>
+        </div>
+        <div id="dash-recent-transactions" class="divide-y divide-slate-100 dark:divide-slate-800">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TAB 2: TRANSAKSI (BUKU KAS UTAMA) -->
+    <div id="view-transactions" class="tab-view hidden space-y-5">
+      
+      <!-- Transactions Header & Quick Action Buttons -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-black text-slate-900 dark:text-white">Buku Kas Transaksi</h2>
+          <p class="text-xs text-slate-500">Daftar lengkap uang masuk dan keluar secara kronologis</p>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button onclick="App.exportCsv()" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold transition border border-slate-200 dark:border-slate-700 flex items-center space-x-1.5">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span>Ekspor CSV</span>
+          </button>
+          <button onclick="App.openTransactionModal('in')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>Uang Masuk</span>
+          </button>
+          <button onclick="App.openTransactionModal('out')" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm">
+            <i data-lucide="minus" class="w-4 h-4"></i>
+            <span>Uang Keluar</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters & Search Toolbar -->
+      <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+          <!-- Search Input -->
+          <div class="relative">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+            <input type="text" id="tx-search-input" oninput="App.handleTxFilterChange()" placeholder="Cari catatan, nominal, kategori..." class="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500">
+          </div>
+
+          <!-- Filter Tipe -->
+          <select id="tx-filter-type" onchange="App.handleTxFilterChange()" class="px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-emerald-500">
+            <option value="all">Semua Tipe Transaksi</option>
+            <option value="in">Hanya Uang Masuk</option>
+            <option value="out">Hanya Uang Keluar</option>
+          </select>
+
+          <!-- Filter Kategori -->
+          <select id="tx-filter-category" onchange="App.handleTxFilterChange()" class="px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-emerald-500">
+            <!-- Dynamically populated -->
+          </select>
+
+          <!-- Filter Dompet -->
+          <select id="tx-filter-wallet" onchange="App.handleTxFilterChange()" class="px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-emerald-500">
+            <!-- Dynamically populated -->
+          </select>
+        </div>
+
+        <div class="flex items-center justify-between text-xs pt-1 border-t border-slate-100 dark:border-slate-800 text-slate-500">
+          <div id="tx-filter-summary">
+            Memuat transaksi...
+          </div>
+          <button onclick="App.resetTxFilters()" class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
+            Reset Filter
+          </button>
+        </div>
+      </div>
+
+      <!-- Transactions Grouped List Container -->
+      <div id="transactions-grouped-list">
+        <!-- Dynamically rendered -->
+      </div>
+
+    </div>
+
+    <!-- TAB 3: HUTANG & PIUTANG -->
+    <div id="view-debts" class="tab-view hidden space-y-6">
+      
+      <!-- Debts Header & Summary Cards -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-black text-slate-900 dark:text-white">Buku Hutang & Piutang</h2>
+          <p class="text-xs text-slate-500">Kelola tagihan pelanggan dan kewajiban bayar ke supplier</p>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button onclick="App.openDebtModal('piutang')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>+ Catat Piutang</span>
+          </button>
+          <button onclick="App.openDebtModal('hutang')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>+ Catat Hutang</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Summary Stat Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/30 p-5 rounded-2xl border border-emerald-200 dark:border-emerald-800/60 shadow-sm flex items-center justify-between">
+          <div>
+            <span class="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">Total Piutang Belum Lunas</span>
+            <p id="debt-summary-piutang" class="text-2xl font-black text-emerald-800 dark:text-emerald-300 mt-1">Rp 0</p>
+            <p class="text-[11px] text-emerald-600 dark:text-emerald-500 mt-0.5">Uang toko kita yang masih ada di tangan pelanggan</p>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-emerald-200/60 dark:bg-emerald-800/60 text-emerald-700 dark:text-emerald-200 flex items-center justify-center">
+            <i data-lucide="user-check" class="w-6 h-6"></i>
+          </div>
+        </div>
+
+        <div class="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/30 p-5 rounded-2xl border border-amber-200 dark:border-amber-800/60 shadow-sm flex items-center justify-between">
+          <div>
+            <span class="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide">Total Hutang Belum Lunas</span>
+            <p id="debt-summary-hutang" class="text-2xl font-black text-amber-800 dark:text-amber-300 mt-1">Rp 0</p>
+            <p class="text-[11px] text-amber-600 dark:text-amber-500 mt-0.5">Kewajiban pembayaran toko ke supplier atau pihak lain</p>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-amber-200/60 dark:bg-amber-800/60 text-amber-700 dark:text-amber-200 flex items-center justify-center">
+            <i data-lucide="shopping-bag" class="w-6 h-6"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Subtab Selector (Piutang vs Hutang) & Filter Pills -->
+      <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm space-y-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <!-- Segmented Tab -->
+          <div class="bg-slate-100 dark:bg-slate-900 p-1 rounded-xl flex items-center space-x-1 text-xs">
+            <button data-debt-subtab="piutang" onclick="App.switchDebtSubTab('piutang')" class="px-4 py-2 rounded-lg font-bold transition shadow-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white flex items-center space-x-2">
+              <i data-lucide="arrow-down-left" class="w-3.5 h-3.5 text-emerald-500"></i>
+              <span>Piutang (Pelanggan)</span>
+            </button>
+            <button data-debt-subtab="hutang" onclick="App.switchDebtSubTab('hutang')" class="px-4 py-2 rounded-lg transition text-slate-500 dark:text-slate-400 flex items-center space-x-2">
+              <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-amber-500"></i>
+              <span>Hutang (Toko)</span>
+            </button>
+          </div>
+
+          <!-- Status Filter Pills -->
+          <div class="flex items-center space-x-1.5 text-xs overflow-x-auto pb-1 sm:pb-0">
+            <button data-status="all" onclick="App.setDebtStatusFilter('all')" class="debt-status-pill px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-semibold transition">Semua</button>
+            <button data-status="unpaid" onclick="App.setDebtStatusFilter('unpaid')" class="debt-status-pill px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold transition">Belum Lunas</button>
+            <button data-status="overdue" onclick="App.setDebtStatusFilter('overdue')" class="debt-status-pill px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold transition">Jatuh Tempo</button>
+            <button data-status="paid" onclick="App.setDebtStatusFilter('paid')" class="debt-status-pill px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold transition">Lunas</button>
+          </div>
+        </div>
+
+        <!-- Search Input -->
+        <div class="relative pt-1">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-4 text-slate-400"></i>
+          <input type="text" id="debt-search-input" oninput="App.debtSearchQuery = this.value; App.renderDebts();" placeholder="Cari nama orang, catatan, atau nomor telepon..." class="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500">
+        </div>
+      </div>
+
+      <!-- Debts Card Grid -->
+      <div id="debts-card-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Dynamically rendered -->
+      </div>
+
+    </div>
+
+    <!-- TAB 4: LAPORAN & EKSPOR -->
+    <div id="view-reports" class="tab-view hidden space-y-6">
+      
+      <!-- Reports Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-black text-slate-900 dark:text-white">Laporan Keuangan Kas</h2>
+          <p class="text-xs text-slate-500">Ikhtisar laba rugi kas, beban operasional, dan cetak laporan PDF</p>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button onclick="App.printFinancialReport()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 rounded-xl text-xs font-bold transition flex items-center space-x-2 shadow-sm">
+            <i data-lucide="printer" class="w-4 h-4"></i>
+            <span>Cetak PDF Laporan</span>
+          </button>
+          <button onclick="App.exportCsv()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center space-x-2 shadow-sm">
+            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+            <span>Unduh Excel (CSV)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Period Filter Selector -->
+      <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div class="flex items-center space-x-2">
+          <span class="text-slate-500 font-semibold">Pilih Periode Laporan:</span>
+          <select id="report-period-select" onchange="App.handleReportPeriodChange()" class="px-3 py-1.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-emerald-500">
+            <option value="this_month" selected>Bulan Ini</option>
+            <option value="last_month">Bulan Lalu</option>
+            <option value="this_year">Tahun Ini</option>
+            <option value="all">Semua Riwayat</option>
+            <option value="custom">Kustom Rentang Tanggal</option>
+          </select>
+        </div>
+
+        <div id="report-custom-dates" class="hidden flex items-center space-x-2">
+          <input type="date" id="report-custom-start" class="px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs">
+          <span>-</span>
+          <input type="date" id="report-custom-end" class="px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs">
+          <button onclick="App.renderReports()" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold">Terapkan</button>
+        </div>
+      </div>
+
+      <!-- Financial Statement Card (Ringkasan Kas Bersih) -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Pemasukan Kas</span>
+          <p id="report-total-in" class="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-2">Rp 0</p>
+          <span class="text-[11px] text-slate-500 mt-1 block">Semua pendapatan kas</span>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Pengeluaran Kas</span>
+          <p id="report-total-out" class="text-xl sm:text-2xl font-black text-rose-600 dark:text-rose-400 mt-2">Rp 0</p>
+          <span class="text-[11px] text-slate-500 mt-1 block">Beban pokok & operasional</span>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Arus Kas Bersih</span>
+          <p id="report-total-net" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 mt-2">Rp 0</p>
+          <span class="text-[11px] text-slate-500 mt-1 block">Surplus / defisit kas</span>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Net Margin Kas</span>
+          <p id="report-net-margin" class="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-2">0%</p>
+          <span class="text-[11px] text-slate-500 mt-1 block">Persentase efisiensi usaha</span>
+        </div>
+      </div>
+
+      <!-- Category Breakdown Table -->
+      <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100">Rincian Keuangan per Kategori</h3>
+            <p class="text-xs text-slate-500">Daftar beban dan pos pemasukan terbesar</p>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-slate-50 dark:bg-slate-800/80 text-slate-400 uppercase font-bold text-[10px] tracking-wider border-b border-slate-100 dark:border-slate-700">
+              <tr>
+                <th class="py-3 px-4">Nama Kategori</th>
+                <th class="py-3 px-4">Tipe</th>
+                <th class="py-3 px-4 text-center">Frekuensi</th>
+                <th class="py-3 px-4 text-right">Total Nominal</th>
+                <th class="py-3 px-4 text-right">Porsi (%)</th>
+              </tr>
+            </thead>
+            <tbody id="report-category-tbody" class="divide-y divide-slate-100 dark:divide-slate-800">
+              <!-- Dynamically rendered -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TAB 5: DOMPET & REKENING (KELOLA KAS) -->
+    <div id="view-wallets" class="tab-view hidden space-y-6">
+      
+      <!-- Wallets Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-black text-slate-900 dark:text-white">Dompet & Rekening Bank</h2>
+          <p class="text-xs text-slate-500">Kelola kas tunai fisik, rekening bank (BCA, BRI, Mandiri), dan e-wallet QRIS</p>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button onclick="App.openTransferModal()" class="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs font-bold transition flex items-center space-x-1.5">
+            <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
+            <span>Pindah / Transfer Kas</span>
+          </button>
+          <button onclick="App.openNewWalletModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>+ Tambah Dompet</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Banner Saldo Total Semua Rekening -->
+      <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm flex items-center justify-between">
+        <div>
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Kas di Seluruh Dompet</span>
+          <p id="wallets-total-all" class="text-3xl font-black text-slate-900 dark:text-white mt-1.5 privacy-balance">Rp 0</p>
+        </div>
+        <div class="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+          <i data-lucide="shield-check" class="w-6 h-6"></i>
+        </div>
+      </div>
+
+      <!-- Wallets Grid -->
+      <div id="wallets-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Dynamically rendered -->
+      </div>
+
+    </div>
+
+    <!-- TAB 6: PENGATURAN & DATA -->
+    <div id="view-settings" class="tab-view hidden space-y-6">
+      
+      <!-- Settings Header -->
+      <div>
+        <h2 class="text-xl font-black text-slate-900 dark:text-white">Pengaturan Buku Kas</h2>
+        <p class="text-xs text-slate-500">Atur profil toko, kelola kategori, cadangan database, dan pemulihan data</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Form Profil Toko / Usaha -->
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm">
+          <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center space-x-2">
+            <i data-lucide="store" class="w-4 h-4 text-emerald-600"></i>
+            <span>Profil Toko & Informasi Nota</span>
+          </h3>
+
+          <form onsubmit="App.saveProfileSettings(event)" class="space-y-3.5">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Nama Toko / Usaha *</label>
+              <input type="text" id="setting-name" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Nama Pemilik / Kasir</label>
+                <input type="text" id="setting-owner" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">No. WhatsApp / Telp</label>
+                <input type="text" id="setting-phone" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Alamat Usaha</label>
+              <textarea id="setting-address" rows="2" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500"></textarea>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Pesan Kaki Struk / Nota Digital</label>
+              <input type="text" id="setting-notes" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500">
+            </div>
+
+            <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-sm">
+              Simpan Profil Usaha
+            </button>
+          </form>
+        </div>
+
+        <!-- Kelola Kategori -->
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm space-y-5">
+          <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center space-x-2">
+            <i data-lucide="tags" class="w-4 h-4 text-emerald-600"></i>
+            <span>Kelola Kategori Pemasukan & Pengeluaran</span>
+          </h3>
+
+          <!-- Pemasukan -->
+          <div>
+            <span class="text-xs font-bold text-emerald-600 uppercase block mb-2">Kategori Pemasukan</span>
+            <div id="setting-cats-in" class="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto mb-2">
+              <!-- Dynamically populated -->
+            </div>
+            <div class="flex items-center space-x-2">
+              <input type="text" id="new-cat-name-in" placeholder="Nama kategori baru..." class="flex-1 px-3 py-1.5 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 text-xs">
+              <button onclick="App.addNewCategory('in')" class="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg">+ Tambah</button>
+            </div>
+          </div>
+
+          <!-- Pengeluaran -->
+          <div>
+            <span class="text-xs font-bold text-rose-600 uppercase block mb-2">Kategori Pengeluaran</span>
+            <div id="setting-cats-out" class="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto mb-2">
+              <!-- Dynamically populated -->
+            </div>
+            <div class="flex items-center space-x-2">
+              <input type="text" id="new-cat-name-out" placeholder="Nama kategori baru..." class="flex-1 px-3 py-1.5 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 text-xs">
+              <button onclick="App.addNewCategory('out')" class="px-3 py-1.5 bg-rose-600 text-white text-xs font-bold rounded-lg">+ Tambah</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Manajemen Data & Cadangan -->
+      <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm">
+        <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100 mb-2 flex items-center space-x-2">
+          <i data-lucide="database" class="w-4 h-4 text-emerald-600"></i>
+          <span>Cadangan (Backup) & Manajemen Data</span>
+        </h3>
+        <p class="text-xs text-slate-500 mb-5">
+          Simpan file cadangan seluruh buku kas dan transaksi ke komputer atau pulihkan dari file JSON yang pernah Anda simpan.
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+          <button onclick="Store.exportBackupJson()" class="p-4 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-700/60 rounded-xl border border-slate-200 dark:border-slate-700 text-left transition flex flex-col justify-between">
+            <div class="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center mb-2">
+              <i data-lucide="download" class="w-4 h-4"></i>
+            </div>
+            <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Unduh Cadangan JSON</span>
+            <span class="text-[10px] text-slate-500 mt-0.5">Simpan backup offline</span>
+          </button>
+
+          <label class="p-4 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-700/60 rounded-xl border border-slate-200 dark:border-slate-700 text-left transition flex flex-col justify-between cursor-pointer">
+            <input type="file" id="import-backup-input" accept=".json" class="hidden">
+            <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-600 flex items-center justify-center mb-2">
+              <i data-lucide="upload" class="w-4 h-4"></i>
+            </div>
+            <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Pulihkan Cadangan</span>
+            <span class="text-[10px] text-slate-500 mt-0.5">Upload file JSON backup</span>
+          </label>
+
+          <button onclick="App.loadSampleData()" class="p-4 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-700/60 rounded-xl border border-slate-200 dark:border-slate-700 text-left transition flex flex-col justify-between">
+            <div class="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-600 flex items-center justify-center mb-2">
+              <i data-lucide="sparkles" class="w-4 h-4"></i>
+            </div>
+            <span class="text-xs font-bold text-slate-800 dark:text-slate-200">Muat Data Demo</span>
+            <span class="text-[10px] text-slate-500 mt-0.5">Toko Berkah Usaha</span>
+          </button>
+
+          <button onclick="if(confirm('Apakah Anda yakin ingin mengosongkan transaksi di buku kas ini?')) App.resetBookData();" class="p-4 bg-rose-50 dark:bg-rose-950/20 hover:bg-rose-100 dark:hover:bg-rose-950/40 rounded-xl border border-rose-200 dark:border-rose-900/60 text-left transition flex flex-col justify-between">
+            <div class="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-950 text-rose-600 flex items-center justify-center mb-2">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </div>
+            <span class="text-xs font-bold text-rose-700 dark:text-rose-400">Kosongkan Buku Kas</span>
+            <span class="text-[10px] text-rose-600/70 mt-0.5">Hapus semua transaksi</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ==================== MOBILE BOTTOM NAVIGATION BAR ==================== -->
+  <nav id="bottom-nav" class="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 px-3 py-2 flex items-center justify-around">
+    <button data-mobile-tab-target="dashboard" onclick="App.switchTab('dashboard')" class="flex flex-col items-center space-y-1 text-slate-400 dark:text-slate-500 text-[10px] font-semibold">
+      <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+      <span>Ikhtisar</span>
+    </button>
+    <button data-mobile-tab-target="transactions" onclick="App.switchTab('transactions')" class="flex flex-col items-center space-y-1 text-slate-400 dark:text-slate-500 text-[10px] font-semibold">
+      <i data-lucide="list-ordered" class="w-5 h-5"></i>
+      <span>Transaksi</span>
+    </button>
+    <!-- Center Action FAB -->
+    <button onclick="App.openTransactionModal('in')" class="-mt-5 w-12 h-12 rounded-full bg-emerald-600 text-white shadow-lg shadow-emerald-600/40 flex items-center justify-center active:scale-90 transition">
+      <i data-lucide="plus" class="w-6 h-6 stroke-2"></i>
+    </button>
+    <button data-mobile-tab-target="debts" onclick="App.switchTab('debts')" class="flex flex-col items-center space-y-1 text-slate-400 dark:text-slate-500 text-[10px] font-semibold">
+      <i data-lucide="clock" class="w-5 h-5"></i>
+      <span>Hutang</span>
+    </button>
+    <button data-mobile-tab-target="reports" onclick="App.switchTab('reports')" class="flex flex-col items-center space-y-1 text-slate-400 dark:text-slate-500 text-[10px] font-semibold">
+      <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+      <span>Laporan</span>
+    </button>
+  </nav>
+
+  <!-- ==================== PRINTABLE FINANCIAL REPORT AREA (FOR @media print) ==================== -->
+  <div id="printable-report-area" class="print-only"></div>
+
+  <!-- ==================== MODALS CONTAINER ==================== -->
+
+  <!-- MODAL 1: TRANSAKSI (TAMBAH / UBAH) -->
+  <div id="modal-transaction" class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+    <div class="modal-content w-full max-w-lg bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden max-h-[90vh] flex flex-col">
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between">
+        <h3 id="tx-modal-title" class="text-base font-bold text-slate-900 dark:text-white">Catat Transaksi Kas</h3>
+        <button onclick="App.closeModal('modal-transaction')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body Form -->
+      <form id="tx-form" onsubmit="App.saveTransaction(event)" class="p-6 overflow-y-auto space-y-4">
+        <input type="hidden" id="tx-edit-id">
+        <input type="hidden" id="tx-type" value="in">
+
+        <!-- Type Selector (Uang Masuk / Keluar) -->
+        <div class="bg-slate-100 dark:bg-slate-900 p-1 rounded-2xl flex items-center space-x-1">
+          <button type="button" id="btn-type-in" onclick="App.setTxModalType('in')" class="flex-1 py-2.5 rounded-xl font-bold text-xs bg-emerald-600 text-white shadow-sm flex items-center justify-center space-x-1.5 transition">
+            <i data-lucide="arrow-down-left" class="w-4 h-4"></i>
+            <span>Uang Masuk (+)</span>
+          </button>
+          <button type="button" id="btn-type-out" onclick="App.setTxModalType('out')" class="flex-1 py-2.5 rounded-xl font-semibold text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center space-x-1.5 transition">
+            <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+            <span>Uang Keluar (-)</span>
+          </button>
+        </div>
+
+        <!-- Nominal Input -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Nominal Transaksi (Rp) *</label>
+          <div class="relative">
+            <span class="absolute left-3.5 top-3 font-bold text-sm text-slate-400">Rp</span>
+            <input type="number" id="tx-amount" required placeholder="0" min="1" step="1" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-lg font-black text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500">
+          </div>
+          <!-- Quick Amount Chips -->
+          <div class="flex flex-wrap gap-1.5 mt-2">
+            <button type="button" onclick="App.addQuickAmount(50000)" class="text-[11px] px-2.5 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-lg hover:bg-slate-200">+50rb</button>
+            <button type="button" onclick="App.addQuickAmount(100000)" class="text-[11px] px-2.5 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-lg hover:bg-slate-200">+100rb</button>
+            <button type="button" onclick="App.addQuickAmount(250000)" class="text-[11px] px-2.5 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-lg hover:bg-slate-200">+250rb</button>
+            <button type="button" onclick="App.addQuickAmount(500000)" class="text-[11px] px-2.5 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-lg hover:bg-slate-200">+500rb</button>
+            <button type="button" onclick="App.addQuickAmount(1000000)" class="text-[11px] px-2.5 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-lg hover:bg-slate-200">+1 Jt</button>
+          </div>
+        </div>
+
+        <!-- Date & Time -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Tanggal *</label>
+            <input type="date" id="tx-date" required class="input-today w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Jam</label>
+            <input type="time" id="tx-time" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+
+        <!-- Category & Wallet -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Kategori Transaksi *</label>
+            <select id="tx-category" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Masuk / Keluar Dari Dompet *</label>
+            <select id="tx-wallet" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+        </div>
+
+        <!-- Note / Keterangan -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Catatan / Keterangan Transaksi</label>
+          <input type="text" id="tx-note" placeholder="Contoh: Penjualan beras 10kg ke Ibu Maya" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <!-- Receipt / Nota Attachment -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Foto Bukti / Struk (Opsional)</label>
+          <input type="hidden" id="tx-receipt-data">
+          <input type="file" id="tx-receipt-file" accept="image/*" onchange="App.handleReceiptUpload(event)" class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-100 dark:file:bg-slate-700 file:text-slate-700 dark:file:text-slate-200 hover:file:bg-slate-200">
+          <div id="tx-receipt-preview-box" class="hidden mt-2 relative w-24 h-24 rounded-lg overflow-hidden border border-slate-300 dark:border-slate-700">
+            <img id="tx-receipt-img" src="" alt="Bukti" class="w-full h-full object-cover">
+            <button type="button" onclick="App.removeReceiptImage()" class="absolute top-1 right-1 bg-rose-600 text-white rounded-full p-1 text-[10px]">
+              <i data-lucide="x" class="w-3 h-3"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="pt-2">
+          <button type="submit" id="tx-submit-btn" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/30 transition">
+            Simpan Transaksi
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: HUTANG & PIUTANG (TAMBAH / UBAH) -->
+  <div id="modal-debt" class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+    <div class="modal-content w-full max-w-lg bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
+      <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between">
+        <h3 id="debt-modal-title" class="text-base font-bold text-slate-900 dark:text-white">Catat Hutang / Piutang</h3>
+        <button onclick="App.closeModal('modal-debt')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="debt-form" onsubmit="App.saveDebt(event)" class="p-6 space-y-4">
+        <input type="hidden" id="debt-edit-id">
+        <input type="hidden" id="debt-type" value="piutang">
+
+        <!-- Type Selector -->
+        <div class="bg-slate-100 dark:bg-slate-900 p-1 rounded-2xl flex items-center space-x-1">
+          <button type="button" id="btn-debt-type-piutang" onclick="App.setDebtModalType('piutang')" class="flex-1 py-2.5 rounded-xl font-bold text-xs bg-emerald-600 text-white shadow-sm flex items-center justify-center space-x-1.5 transition">
+            <i data-lucide="arrow-down-left" class="w-4 h-4"></i>
+            <span>Piutang (Uang di Orang)</span>
+          </button>
+          <button type="button" id="btn-debt-type-hutang" onclick="App.setDebtModalType('hutang')" class="flex-1 py-2.5 rounded-xl font-semibold text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center space-x-1.5 transition">
+            <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+            <span>Hutang (Kewajiban Toko)</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Nama Pihak / Kontak *</label>
+            <input type="text" id="debt-person-name" required placeholder="Contoh: Pak Joko / Agen Beras" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">No. WhatsApp / HP</label>
+            <input type="tel" id="debt-phone" placeholder="08xxxxxxxxxx" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Nominal Hutang / Piutang (Rp) *</label>
+          <input type="number" id="debt-amount" required min="1" placeholder="0" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-base font-bold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Tanggal Catat *</label>
+            <input type="date" id="debt-date" required class="input-today w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Tanggal Jatuh Tempo</label>
+            <input type="date" id="debt-due-date" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Catatan / Rincian Barang</label>
+          <textarea id="debt-note" rows="2" placeholder="Contoh: Ambil minyak goreng 2 dus, janji lunas tanggal 15" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500"></textarea>
+        </div>
+
+        <button type="submit" id="debt-submit-btn" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition">
+          Simpan Catatan
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 3: BAYAR HUTANG / CICILAN -->
+  <div id="modal-debt-payment" class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+    <div class="modal-content w-full max-w-md bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
+      <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white">Catat Pembayaran / Cicilan</h3>
+        <button onclick="App.closeModal('modal-debt-payment')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="debt-payment-form" onsubmit="App.saveDebtPayment(event)" class="p-6 space-y-4">
+        <input type="hidden" id="debt-pay-id">
+
+        <div class="bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-1 text-xs">
+          <div class="flex justify-between">
+            <span class="text-slate-500">Nama Kontak:</span>
+            <span id="debt-pay-name" class="font-bold text-slate-900 dark:text-slate-100">-</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-500">Total Hutang Awal:</span>
+            <span id="debt-pay-total" class="font-semibold text-slate-700 dark:text-slate-300">-</span>
+          </div>
+          <div class="flex justify-between pt-1 border-t border-slate-200 dark:border-slate-700">
+            <span class="font-bold text-slate-700 dark:text-slate-300">Sisa Tagihan:</span>
+            <span id="debt-pay-remaining" class="font-black text-rose-600 text-sm">-</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Nominal Dibayarkan (Rp) *</label>
+          <input type="number" id="debt-pay-amount" required min="1" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-base font-bold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500">
+          <p class="text-[11px] text-slate-400 mt-1">Pembayaran ini akan otomatis tercatat sebagai transaksi di Buku Kas.</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Dompet / Rekening *</label>
+            <select id="debt-pay-wallet" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500">
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Tanggal Bayar *</label>
+            <input type="date" id="debt-pay-date" required class="input-today w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Keterangan Pembayaran</label>
+          <input type="text" id="debt-pay-note" placeholder="Contoh: Cicilan tahap 1 via transfer" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition">
+          Simpan Pembayaran
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 4: RIWAYAT PEMBAYARAN HUTANG -->
+  <div id="modal-debt-history" class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+    <div class="modal-content w-full max-w-md bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
+      <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between">
+        <h3 id="debt-history-title" class="text-base font-bold text-slate-900 dark:text-white">Riwayat Pembayaran</h3>
+        <button onclick="App.closeModal('modal-debt-history')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div id="debt-history-list" class="p-6 space-y-2.5 max-h-80 overflow-y-auto">
+        <!-- Dynamically populated -->
+      </div>
+      <div class="p-4 bg-slate-50 dark:bg-slate-900/40 border-t border-slate-100 dark:border-slate-800 text-right">
+        <button onclick="App.closeModal('modal-debt-history')" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-semibold">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 5: TRANSFER ANTAR DOMPET -->
+  <div id="modal-transfer" class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+    <div class="modal-content w-full max-w-md bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
+      <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white">Pindah Kas / Transfer Saldo</h3>
+        <button onclick="App.closeModal('modal-transfer')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="transfer-form" onsubmit="App.saveTransfer(event)" class="p-6 space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Dari Dompet *</label>
+            <select id="transfer-from-wallet" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Ke Dompet *</label>
+            <select id="transfer-to-wallet" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500"></select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Nominal Pindah Kas (Rp) *</label>
+          <input type="number" id="transfer-amount" required min="1" placeholder="0" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-base font-bold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Tanggal *</label>
+            <input type="date" id="transfer-date" required class="input-today w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Catatan Tambahan</label>
+            <input type="text" id="transfer-note" placeholder="Contoh: Setor kas harian ke bank" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+
+        <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition">
+          Konfirmasi Pindah Dana
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 6: TAMBAH DOMPET BARU -->
+  <div id="modal-new-wallet" class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+    <div class="modal-content w-full max-w-md bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
+      <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white">Tambah Rekening / Dompet Kas</h3>
+        <button onclick="App.closeModal('modal-new-wallet')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="new-wallet-form" onsubmit="App.saveNewWallet(event)" class="p-6 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Nama Dompet / Rekening *</label>
+          <input type="text" id="new-wallet-name" required placeholder="Contoh: Bank BNI / ShopeePay" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Jenis Dompet *</label>
+          <select id="new-wallet-type" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500">
+            <option value="cash">Kas Tunai Fisik</option>
+            <option value="bank" selected>Rekening Bank (BCA, BRI, Mandiri, BNI, dll)</option>
+            <option value="ewallet">E-Wallet / QRIS (GoPay, DANA, OVO, ShopeePay)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Saldo Awal (Rp)</label>
+          <input type="number" id="new-wallet-balance" value="0" min="0" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition">
+          Simpan Dompet Baru
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 7: DIGITAL RECEIPT / NOTA KASIR -->
+  <div id="modal-receipt" class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+    <div class="modal-content w-full max-w-sm bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
+      
+      <!-- Top Action Bar -->
+      <div class="px-5 py-3 bg-slate-900 text-white flex items-center justify-between no-print">
+        <span class="text-xs font-bold flex items-center gap-1.5">
+          <i data-lucide="receipt" class="w-4 h-4 text-emerald-400"></i>
+          <span>Struk Pembayaran Digital</span>
+        </span>
+        <button onclick="App.closeModal('modal-receipt')" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Thermal Paper Area -->
+      <div class="receipt-paper p-6 text-slate-800 font-mono text-xs">
+        <!-- Store Header -->
+        <div class="text-center pb-3 border-b border-dashed border-slate-300">
+          <h2 id="receipt-store-name" class="font-extrabold text-sm uppercase tracking-tight text-slate-900">TOKO BERKAH USAHA</h2>
+          <p id="receipt-store-address" class="text-[11px] text-slate-600 mt-0.5">Surabaya, Jawa Timur</p>
+          <p id="receipt-store-phone" class="text-[11px] text-slate-600">Telp: 081298765432</p>
+        </div>
+
+        <!-- Meta -->
+        <div class="py-2.5 border-b border-dashed border-slate-300 text-[11px] space-y-1 text-slate-600">
+          <div class="flex justify-between">
+            <span>No. Ref:</span>
+            <span id="receipt-ref" class="font-bold text-slate-900">#TRX-001</span>
+          </div>
+          <div class="flex justify-between">
+            <span>Waktu:</span>
+            <span id="receipt-datetime">23 Nov 2026, 10:15</span>
+          </div>
+          <div class="flex justify-between">
+            <span>Kasir:</span>
+            <span id="receipt-cashier">Budi Santoso</span>
+          </div>
+          <div class="flex justify-between">
+            <span>Metode Bayar:</span>
+            <span id="receipt-wallet">Kas Tunai</span>
+          </div>
+        </div>
+
+        <!-- Transaction Details -->
+        <div class="py-3 border-b border-dashed border-slate-300 space-y-1.5">
+          <div class="flex justify-between items-start">
+            <span id="receipt-desc" class="font-bold text-slate-900 max-w-[190px]">Penjualan Produk</span>
+            <span id="receipt-category" class="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded">Penjualan</span>
+          </div>
+        </div>
+
+        <!-- Total -->
+        <div class="py-3 border-b-2 border-slate-900 flex justify-between items-baseline font-bold">
+          <span id="receipt-type-label" class="text-[11px] uppercase tracking-wider">TOTAL PEMBAYARAN:</span>
+          <span id="receipt-amount" class="text-base font-black text-slate-950">Rp 0</span>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center pt-3 text-[10px] text-slate-500 space-y-1">
+          <p id="receipt-notes-footer">Terima kasih atas kunjungan & kepercayaan Anda!</p>
+          <p class="text-[9px] text-slate-400">=== Buku Kas Pintar Official ===</p>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="p-4 bg-slate-50 border-t border-slate-100 grid grid-cols-2 gap-2 no-print">
+        <button onclick="App.shareReceiptWhatsApp()" class="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 shadow-sm">
+          <i data-lucide="message-square" class="w-4 h-4"></i>
+          <span>Kirim ke WhatsApp</span>
+        </button>
+        <button onclick="App.printReceipt()" class="py-2.5 px-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5">
+          <i data-lucide="printer" class="w-4 h-4"></i>
+          <span>Cetak Struk</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL 8: PREVIEW FOTO STRUK -->
+  <div id="modal-receipt-preview" class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <div class="modal-content w-full max-w-md bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
+      <div class="p-4 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between">
+        <h4 id="preview-modal-caption" class="text-xs font-bold text-slate-900 dark:text-white truncate">Foto Bukti Struk</h4>
+        <button onclick="App.closeModal('modal-receipt-preview')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div class="p-4 flex items-center justify-center bg-slate-900">
+        <img id="preview-modal-img" src="" alt="Bukti Struk" class="max-h-96 rounded-lg object-contain">
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 9: TAMBAH BUKU KAS BARU -->
+  <div id="modal-new-book" class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+    <div class="modal-content w-full max-w-md bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
+      <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white">Buat Buku Kas Baru</h3>
+        <button onclick="App.closeModal('modal-new-book')" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="new-book-form" onsubmit="App.saveNewBook(event)" class="p-6 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Nama Buku Kas / Usaha *</label>
+          <input type="text" id="new-book-name" required placeholder="Contoh: Warung Kopi / Kas Pribadi" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Tipe Pembukuan</label>
+          <select id="new-book-type" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500">
+            <option value="umkm" selected>Toko / UMKM / Bisnis</option>
+            <option value="personal">Keuangan Pribadi</option>
+            <option value="freelance">Freelancer / Jasa</option>
+            <option value="organisasi">Kas Organisasi / Komunitas</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Nama Pemilik / Penanggung Jawab</label>
+          <input type="text" id="new-book-owner" placeholder="Nama Anda" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition">
+          Simpan & Buka Buku Kas
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 10: KONFIRMASI HAPUS -->
+  <div id="modal-confirm-delete" class="modal-overlay hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+    <div class="modal-content w-full max-w-sm bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 p-6 text-center space-y-4">
+      <div class="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 mx-auto flex items-center justify-center">
+        <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <h4 class="text-base font-bold text-slate-900 dark:text-white">Konfirmasi Penghapusan</h4>
+        <p id="delete-modal-desc" class="text-xs text-slate-500 mt-1">Apakah Anda yakin ingin menghapus catatan ini?</p>
+      </div>
+      <div class="grid grid-cols-2 gap-2 pt-2">
+        <button onclick="App.closeModal('modal-confirm-delete')" class="py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition">Batal</button>
+        <button onclick="App.executeDelete()" class="py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition shadow-md shadow-rose-600/30">Ya, Hapus</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== TOAST NOTIFICATION CONTAINER ==================== -->
+  <div id="toast" class="fixed bottom-20 lg:bottom-6 right-6 z-50 flex items-center space-x-3 px-4 py-3 rounded-2xl shadow-xl border border-slate-700/60 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 pointer-events-none opacity-0 translate-y-20 transition-all duration-300">
+    <span id="toast-icon"></span>
+    <span id="toast-message" class="text-xs font-semibold"></span>
+  </div>
+
+  <!-- ==================== SCRIPTS ==================== -->
+  <script src="js/components.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/app.js"></script>
+</body>
 </html>
